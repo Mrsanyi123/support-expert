@@ -1,0 +1,174 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Split {
+  TRAIN
+  EVAL
+}
+
+enum CaseStatus {
+  NEW
+  DRAFTED
+  APPROVED
+  REJECTED
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  EDITED_APPROVED
+  REJECTED
+}
+
+enum Rating {
+  CORRECT
+  INCOMPLETE
+  WRONG
+}
+
+model Case {
+  id               String        @id @default(cuid())
+  ticketId         String        @unique
+  customerQuestion String
+  /// Never sent to the model for EVAL cases. Only shown to human reviewers and raters.
+  expertResolution String
+  productArea      String
+  split            Split
+  status           CaseStatus    @default(NEW)
+  createdAt        DateTime      @default(now())
+  reviews          Review[]
+  evalSets         EvalSetCase[]
+  evalResults      EvalResult[]
+
+  @@index([split, status])
+}
+
+model Document {
+  id        String   @id @default(cuid())
+  title     String
+  filename  String   @unique
+  content   String
+  createdAt DateTime @default(now())
+  chunks    Chunk[]
+}
+
+model Chunk {
+  id         String                   @id @default(cuid())
+  documentId String
+  document   Document                 @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  ordinal    Int
+  heading    String?
+  text       String
+  /// Populated with to_tsvector('english', heading || text) by lib/retrieval/chunks.ts
+  tsv        Unsupported("tsvector")?
+
+  @@unique([documentId, ordinal])
+  @@index([tsv], type: Gin)
+}
+
+/// A comparable "version": model + prompt + retrieval strategy.
+model AgentConfig {
+  id            String       @id @default(cuid())
+  key           String       @unique
+  name          String
+  description   String?
+  baseUrl       String
+  model         String
+  /// Name of the env var holding the API key, so keys never live in the DB.
+  apiKeyEnv     String       @default("LLM_API_KEY")
+  promptVersion String
+  useExamples   Boolean      @default(false)
+  maxExamples   Int          @default(3)
+  topK          Int          @default(4)
+  temperature   Float        @default(0.2)
+  isDefault     Boolean      @default(false)
+  createdAt     DateTime     @default(now())
+  reviews       Review[]
+  evalRuns      EvalRun[]
+}
+
+/// The review record: the most valuable data in the product.
+model Review {
+  id            String       @id @default(cuid())
+  caseId        String
+  case          Case         @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  agentConfigId String
+  agentConfig   AgentConfig  @relation(fields: [agentConfigId], references: [id])
+  aiDraft       String
+  finalAnswer   String?
+  status        ReviewStatus @default(PENDING)
+  rejectReason  String?
+  /// [{ ref, chunkId, documentId, title, heading, snippet }]
+  sourceRefs    Json
+  /// [{ reviewId, caseId, ticketId }]
+  exampleRefs   Json
+  editDistance  Int?
+  reviewer      String?
+  modelName     String
+  promptVersion String
+  latencyMs     Int?
+  createdAt     DateTime     @default(now())
+  reviewedAt    DateTime?
+
+  @@index([status])
+  @@index([caseId])
+}
+
+model EvalSet {
+  id        String        @id @default(cuid())
+  name      String        @unique
+  lockedAt  DateTime?
+  createdAt DateTime      @default(now())
+  cases     EvalSetCase[]
+  runs      EvalRun[]
+}
+
+model EvalSetCase {
+  evalSetId String
+  evalSet   EvalSet @relation(fields: [evalSetId], references: [id], onDelete: Cascade)
+  caseId    String
+  case      Case    @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@id([evalSetId, caseId])
+}
+
+model EvalRun {
+  id            String       @id @default(cuid())
+  evalSetId     String
+  evalSet       EvalSet      @relation(fields: [evalSetId], references: [id], onDelete: Cascade)
+  agentConfigId String
+  agentConfig   AgentConfig  @relation(fields: [agentConfigId], references: [id])
+  label         String?
+  /// "live" for real model output, "seed" for the bundled sample run.
+  source        String       @default("live")
+  /// Number of approved TRAIN examples available when the run started.
+  examplePoolSize Int        @default(0)
+  createdAt     DateTime     @default(now())
+  finishedAt    DateTime?
+  results       EvalResult[]
+}
+
+model EvalResult {
+  id         String   @id @default(cuid())
+  runId      String
+  run        EvalRun  @relation(fields: [runId], references: [id], onDelete: Cascade)
+  caseId     String
+  case       Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  answer     String
+  sourceRefs Json
+  exampleRefs Json
+  error      String?
+  latencyMs  Int?
+  rating     Rating?
+  note       String?
+  ratedBy    String?
+  ratedAt    DateTime?
+
+  @@unique([runId, caseId])
+}

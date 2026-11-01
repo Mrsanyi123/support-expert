@@ -1,0 +1,124 @@
+{
+  "_comment": "Seeded expert reviews on TRAIN cases. final=null means the expert's final answer is the ticket's expert_resolution. draft=null means the draft was approved unchanged. Cloudflare Bot Fight Mode (networking) intentionally has no approved correction so the live demo can add one.",
+  "reviews": [
+    {
+      "ticketId": "T-1001",
+      "status": "APPROVED",
+      "daysAgo": 27,
+      "draft": null,
+      "final": null
+    },
+    {
+      "ticketId": "T-1004",
+      "status": "EDITED_APPROVED",
+      "daysAgo": 26,
+      "draft": "Signature failures are usually caused by verifying a parsed body instead of the raw body. Make sure you use express.raw({ type: 'application/json' }) on the webhook route and the signing secret for this specific endpoint [D1]. Also check that your server clock is in sync, since timestamps more than 300 seconds old are rejected [D2].",
+      "final": null
+    },
+    {
+      "ticketId": "T-1008",
+      "status": "EDITED_APPROVED",
+      "daysAgo": 25,
+      "draft": "When deliveries fail, Relay retries with exponential backoff for up to 15 attempts over about 3 days [D1]. Since your server is fixed, pending events should be delivered on their next retry attempt. You can follow each attempt in Dashboard > Webhooks > Endpoint > Attempts [D1].",
+      "final": null
+    },
+    {
+      "ticketId": "T-1012",
+      "status": "EDITED_APPROVED",
+      "daysAgo": 23,
+      "draft": "The documented test-mode limit is 25 requests per second per account, shared across all keys in that mode [D1]. Short bursts are allowed, but sustained traffic above the limit returns 429 with a Retry-After header [D1]. Check whether other services or CI jobs use the same account at the same time.",
+      "final": null
+    },
+    {
+      "ticketId": "T-1005",
+      "status": "APPROVED",
+      "daysAgo": 22,
+      "draft": null,
+      "final": null
+    },
+    {
+      "ticketId": "T-1015",
+      "status": "EDITED_APPROVED",
+      "daysAgo": 21,
+      "draft": "You were not double charged. Upgrades are prorated: you are charged for the remaining days on Growth minus the unused time on Starter [D1]. The negative line is that credit, and next month you will only see the Growth charge.",
+      "final": null
+    },
+    {
+      "ticketId": "T-1021",
+      "status": "EDITED_APPROVED",
+      "daysAgo": 19,
+      "draft": "RuntimeError: Event loop is closed usually means the event loop was shut down while requests were still in flight. Make sure you await every client call and avoid calling asyncio.run more than once [D1]. You can enable debug logs with RELAY_LOG=debug to see the failing request [D1].",
+      "final": null
+    },
+    {
+      "ticketId": "T-1026",
+      "status": "EDITED_APPROVED",
+      "daysAgo": 17,
+      "draft": "Events can only be replayed for 30 days after they were created, so events from 45 days ago are no longer available for replay [D1]. Your Scale plan keeps event logs for 90 days, so you can still view them in the dashboard and re-create them from your own system if needed [D2].",
+      "final": null
+    },
+    {
+      "ticketId": "T-1030",
+      "status": "EDITED_APPROVED",
+      "daysAgo": 15,
+      "draft": "403 scope_insufficient means your restricted key is missing a scope required by the endpoint [D1]. Check the required_scope field in the error body and add that scope to the key in Dashboard > Developers > API keys [D1].",
+      "final": null
+    },
+    {
+      "ticketId": "T-1013",
+      "status": "EDITED_APPROVED",
+      "daysAgo": 14,
+      "draft": "In v3, verifyWebhook() moved to relay.webhooks.verify(rawBody, signatureHeader, secret) [D1]. Update the call site and it will work again.",
+      "final": null
+    },
+    {
+      "ticketId": "T-1033",
+      "status": "EDITED_APPROVED",
+      "daysAgo": 12,
+      "draft": "Verification fails when the body you verify is not the raw request body [D1]. Make sure your Lambda uses the same signing secret as the endpoint and that its clock is synchronized [D1].",
+      "final": null
+    },
+    {
+      "ticketId": "T-1006",
+      "status": "EDITED_APPROVED",
+      "daysAgo": 10,
+      "draft": "401 invalid_api_key means the key is missing, malformed, revoked, or expired [D1]. Make sure you send it as Authorization: Bearer <key> and that you copied the full key. Test keys start with rk_test_ and live keys with rk_live_ [D2].",
+      "final": null
+    },
+    {
+      "ticketId": "T-1017",
+      "status": "APPROVED",
+      "daysAgo": 8,
+      "draft": null,
+      "final": null
+    },
+    {
+      "ticketId": "T-1042",
+      "status": "REJECTED",
+      "daysAgo": 6,
+      "draft": "Make sure you allowlisted both Relay delivery ranges, 34.120.15.0/28 and 35.201.88.0/28 [D1]. If deliveries still fail with 403, check whether your endpoint has authentication middleware that rejects requests without a session.",
+      "rejectReason": "Wrong root cause. The challenge page comes from Cloudflare Bot Fight Mode, which IP allowlisting does not bypass. Needs a WAF skip rule or Bot Fight Mode off."
+    },
+    {
+      "ticketId": "T-1022",
+      "status": "APPROVED",
+      "daysAgo": 5,
+      "draft": null,
+      "final": null
+    },
+    {
+      "ticketId": "T-1036",
+      "status": "REJECTED",
+      "daysAgo": 3,
+      "draft": "Payloads are limited to 256 KB by default [D1]. You can raise the limit to 1 MB under Dashboard > Settings > Limits if you need to send larger attachments.",
+      "rejectReason": "Hallucinated setting. The 256 KB limit is fixed; the customer should send a file URL instead."
+    },
+    {
+      "ticketId": "T-1009",
+      "status": "APPROVED",
+      "daysAgo": 2,
+      "draft": null,
+      "final": null
+    }
+  ]
+}

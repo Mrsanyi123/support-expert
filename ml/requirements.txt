@@ -1,0 +1,7 @@
+torch>=2.5
+transformers>=4.56
+trl>=0.23
+peft>=0.17
+datasets>=3.0
+accelerate>=1.0
+bitsandbytes>=0.45; platform_system == "Linux"

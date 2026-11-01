@@ -1,0 +1,89 @@
+{
+  "_comment": "Seeded sample runs on the locked held-out set, labelled 'seed' in the UI. Re-run either version to replace them with live model output.",
+  "runs": {
+    "A": { "label": "Sample run: base model + docs", "daysAgo": 9 },
+    "B": { "label": "Sample run: + 15 expert examples", "daysAgo": 1 }
+  },
+  "results": {
+    "T-1003": {
+      "A": { "rating": "CORRECT", "answer": "Relay requires your endpoint to return a 2xx response within 10 seconds [D1]. Because your handler takes about 20 seconds, each attempt times out, is marked as failed, and is retried, which is why you see the same event again [D1]. Return 200 immediately and move the processing to a queue or background job, and deduplicate on the event id since retries can deliver an event more than once [D2]." },
+      "B": { "rating": "CORRECT", "answer": "Your handler is exceeding Relay's 10-second response limit, so every attempt is recorded as a timeout and retried [D1]. Acknowledge the webhook right away with a 200, push the order onto a queue for the 20-second processing, and skip event ids you have already handled so retries don't double-process orders [D1][D2]." }
+    },
+    "T-1010": {
+      "A": { "rating": "CORRECT", "answer": "You are billed for one event. Each event counts once toward your quota regardless of how many endpoints receive it or how many retries it needs, and only live-mode events count [D1]." },
+      "B": { "rating": "CORRECT", "answer": "One event. Billing counts each event once no matter how many endpoints it fans out to or how many delivery attempts it takes [D1]. Test-mode events are not billed at all [D1]." }
+    },
+    "T-1016": {
+      "A": { "rating": "CORRECT", "answer": "Relay's signature check rejects requests whose timestamp is more than 300 seconds from your server's clock [D1]. Since only one server fails, its clock has most likely drifted by more than 5 minutes. Sync it with NTP and the same webhooks will verify [D1]." },
+      "B": { "rating": "CORRECT", "answer": "That server's clock is probably off by more than 5 minutes. Verification rejects any request whose t timestamp is outside a 300-second tolerance [D1]. Enable NTP time sync (chrony or systemd-timesyncd) on that host and the errors will stop [D1]." }
+    },
+    "T-1020": {
+      "A": { "rating": "WRONG", "note": "Claims dedup works the next day. Keys expire after 24 hours, so this creates duplicates.", "answer": "Yes. If Relay already processed a request with the same Idempotency-Key, it returns the original response instead of creating a new event, and the response includes Idempotent-Replayed: true [D1]. Retrying with the same key is safe." },
+      "B": { "rating": "INCOMPLETE", "note": "Mentions the 24 hour window but doesn't say what to do for late retries.", "answer": "Relay returns the original response when it sees an Idempotency-Key it has already processed, so retries with the same key are safe [D1]. Keys are stored for 24 hours [D1]." }
+    },
+    "T-1025": {
+      "A": { "rating": "CORRECT", "answer": "No. Relay does not guarantee delivery order, and retries can cause a later event to arrive first [D1]. Make your handler order-independent, for example by checking the invoice status or timestamps in the payload, and deduplicate on the event id [D1]." },
+      "B": { "rating": "CORRECT", "answer": "You can't rely on ordering: Relay doesn't guarantee it and a retried invoice.created can arrive after invoice.paid [D1]. Handle each event based on the current state of the invoice (or the payload timestamps) rather than arrival order, and skip duplicate event ids [D1]." }
+    },
+    "T-1032": {
+      "A": { "rating": "CORRECT", "answer": "The v1 API was retired on 2024-06-30 and now returns 410 Gone [D1]. Switch your requests to https://api.relay.dev/v2. If you use an SDK, upgrade to the current major version, which targets v2 [D2]." },
+      "B": { "rating": "CORRECT", "answer": "v1 was retired on 2024-06-30, which is why you now get 410 Gone [D1]. Point your calls at https://api.relay.dev/v2 and upgrade the SDK to its current major version (Node v3) [D1][D2]." }
+    },
+    "T-1037": {
+      "A": { "rating": "INCOMPLETE", "note": "Only says wait for Retry-After. Misses the batch endpoint and Scale limits.", "answer": "Live mode is limited to 100 requests per second per account [D1]. Requests over the limit return 429 with a Retry-After header, so wait the indicated number of seconds before retrying [D1]. The SDKs retry 429s automatically." },
+      "B": { "rating": "INCOMPLETE", "note": "Mentions batching but not that Scale accounts can request higher limits.", "answer": "Live mode allows 100 requests per second per account, with short bursts up to 2x [D1]. Use POST /v2/events/batch to send up to 100 events per request, which keeps a 300 events/s sync well under the limit [D1]." }
+    },
+    "T-1041": {
+      "A": { "rating": "CORRECT", "answer": "Create a restricted key in Dashboard > Developers > API keys and select only the events:read scope [D1]. Write calls made with it will fail with 403 scope_insufficient, which is what you want for a read-only analytics service [D1]." },
+      "B": { "rating": "INCOMPLETE", "note": "Regression: borrowed the replay example and suggested events:write, which a read-only analytics key should not have.", "answer": "Create a restricted key in Dashboard > Developers > API keys with the events:read scope [D1]. If the analytics service also needs to replay events, add events:write as well, since replay requires it [E1]." }
+    },
+    "T-1046": {
+      "A": { "rating": "CORRECT", "answer": "No, this is expected. Relay delivers at least once, so retries can deliver the same event more than once [D1]. Store the ids of events you've processed and ignore duplicates. Responding with a 2xx within 10 seconds reduces retries [D1]." },
+      "B": { "rating": "CORRECT", "answer": "It's not a bug. Delivery is at least once: if an attempt times out after your server already processed it, Relay retries and you see the event again [D1]. Deduplicate on the event id and respond with a 2xx quickly [D1]." }
+    },
+    "T-1055": {
+      "A": { "rating": "CORRECT", "answer": "No. Relay does not offer refunds for partial months [D1]. Your Growth plan stays active until the end of the paid period, and you won't be charged again." },
+      "B": { "rating": "CORRECT", "answer": "Partial months aren't refunded [D1]. You keep Growth until the end of the current paid period, and no further charges will be made after that." }
+    },
+    "T-1061": {
+      "A": { "rating": "WRONG", "note": "Generic raw-body advice. Misses the known 3.2.0-3.2.2 non-ASCII bug.", "answer": "Signature verification fails when the body is parsed before verifying. Make sure the webhook route uses express.raw({ type: 'application/json' }) and that you pass the raw body to relay.webhooks.verify [D1]. Also confirm you're using the signing secret of this endpoint, since each endpoint has its own secret [D2]." },
+      "B": { "rating": "CORRECT", "answer": "This is the known bug in @relay/node 3.2.0 to 3.2.2, where verify re-encodes string bodies as latin1 and fails on non-ASCII payloads such as Japanese product names [E1]. Upgrade to @relay/node 3.2.3 or later. Until you can, pass the raw Buffer to relay.webhooks.verify instead of a string [E1][D1]." }
+    },
+    "T-1062": {
+      "A": { "rating": "INCOMPLETE", "note": "Raw body is right in spirit but doesn't explain API Gateway re-serialization or base64.", "answer": "Signatures must be verified against the raw request body, before any JSON parsing [D1]. Check that your Lambda passes the unmodified body to the verify function and that the deployed function uses the same signing secret [D1]." },
+      "B": { "rating": "CORRECT", "answer": "API Gateway is changing the body before your code sees it [E1]. A mapping template or non-proxy integration re-serializes the JSON, and binary media types base64-encode it. Switch to Lambda proxy integration and verify event.body, decoding it from base64 first when event.isBase64Encoded is true [E1][E2]." }
+    },
+    "T-1063": {
+      "A": { "rating": "WRONG", "note": "Says retries will resume. The endpoint is auto-disabled and needs re-enabling plus a replay.", "answer": "When deliveries fail, Relay retries with exponential backoff for up to 15 attempts over about 3 days [D1]. Since your endpoint is responding with 200 again, new events should be delivered on the next attempt. You can monitor them in Dashboard > Webhooks > Endpoint > Attempts [D1]." },
+      "B": { "rating": "CORRECT", "answer": "Your endpoint was automatically disabled (disabled_failing) after 5 consecutive days of failed deliveries, so Relay stopped attempting new events [E1]. Fixing the server doesn't re-enable it: click Enable in Dashboard > Webhooks > your endpoint, then bulk replay from last Thursday until now with POST /v2/events/replay to receive what you missed [E1][D1]." }
+    },
+    "T-1064": {
+      "A": { "rating": "WRONG", "note": "Insists the limit is 25/s. Misses the legacy 10 req/s pool for pre-2024 test keys.", "answer": "The test-mode limit is 25 requests per second per account, shared across all keys in that mode [D1]. If you see 429s at 10 requests per second, check whether other jobs are using the same account at the same time. Honor the Retry-After header when retrying [D1]." },
+      "B": { "rating": "CORRECT", "answer": "Test keys created before March 2024 are on a legacy rate-limit pool of 10 requests per second [E1]. Roll your test key in Dashboard > Developers > API keys and use the new key in your test suite; it gets the current 25 req/s limit. Live keys are not affected [E1]." }
+    },
+    "T-1065": {
+      "A": { "rating": "INCOMPLETE", "note": "Explains proration but doesn't offer the consolidated invoice AP asked for.", "answer": "This is not a duplicate charge. Upgrades are prorated: the -$30 line is the credit for unused Starter time and the $203 line is the Growth charge for the rest of the period [D1]. Next month you will only see the Growth charge." },
+      "B": { "rating": "CORRECT", "answer": "It isn't a duplicate. The -$30 line credits your unused Starter time and the $203 line is the prorated Growth charge for the rest of the period [D1][E1]. If your AP system needs a single amount, email billing@relay.dev with the invoice number and we'll issue a consolidated invoice [E1]." }
+    },
+    "T-1066": {
+      "A": { "rating": "WRONG", "note": "Generic 401 checklist. EU accounts must use api.eu.relay.dev.", "answer": "401 invalid_api_key means the key is missing, malformed, revoked, or expired [D1]. Make sure you send it in the Authorization header as Bearer <key>, without extra spaces, and that you're using the right mode (rk_test_ or rk_live_) [D2]." },
+      "B": { "rating": "CORRECT", "answer": "Accounts with EU data residency must call the EU host, https://api.eu.relay.dev/v2 [E1]. EU keys are rejected by the global api.relay.dev host with 401 invalid_api_key, even though they're valid. Change the URL in your curl (and set the base URL in your SDK) and the same key will work [E1][E2]." }
+    },
+    "T-1067": {
+      "A": { "rating": "WRONG", "note": "Repeats the IP allowlist they already did. Root cause is Bot Fight Mode.", "answer": "Make sure both Relay delivery ranges, 34.120.15.0/28 and 35.201.88.0/28, are allowlisted [D1]. A 403 means your server rejected the request, so check the endpoint's firewall and authentication rules, and look at the stored response body in the attempt log for details [D2]." },
+      "B": { "rating": "WRONG", "note": "No approved correction covers Cloudflare yet. Same wrong root cause as A.", "answer": "Confirm that 34.120.15.0/28 and 35.201.88.0/28 are allowlisted for HTTPS in your firewall [D1]. The 403 means your endpoint rejected the request, so check any authentication or WAF rules in front of it and compare the response body in the attempt log [D2]." }
+    },
+    "T-1068": {
+      "A": { "rating": "WRONG", "note": "Generic asyncio advice. Misses the 1.4.x loop-binding bug and the fix.", "answer": "RuntimeError: Event loop is closed usually means the loop was shut down while requests were still running. Make sure you await all client calls and don't close the loop between batches [D1]. Enable RELAY_LOG=debug to see which request fails [D1]." },
+      "B": { "rating": "CORRECT", "answer": "relay-python 1.4.x binds AsyncClient to the event loop that exists when it's created, so a global client created at startup breaks once the worker runs on a different loop [E1][E2]. Create the client inside the worker's startup hook on the running loop and close it on cleanup, or upgrade to relay-python 1.5.0, which binds lazily [E1]." }
+    },
+    "T-1069": {
+      "A": { "rating": "WRONG", "note": "Says impossible. Scale accounts can request archive replay up to 90 days.", "answer": "Events can only be replayed for 30 days after they were created, so events from 50 days ago can no longer be replayed through the dashboard or the API [D1]. You would need to re-create those events from your own records." },
+      "B": { "rating": "INCOMPLETE", "note": "Right idea but routes to the account manager and doesn't list what to send.", "answer": "Self-serve replay is limited to 30 days [D1]. Because you're on Scale, contact your account manager about an archive replay for the older events [E1]." }
+    },
+    "T-1070": {
+      "A": { "rating": "INCOMPLETE", "note": "Points to required_scope but never names events:write.", "answer": "A 403 here is scope_insufficient: your restricted key is missing a scope needed for replay [D1]. Check the required_scope field in the error body and add that scope to the key in Dashboard > Developers > API keys [D1]." },
+      "B": { "rating": "CORRECT", "answer": "Replaying requires the events:write scope [E1]. events:read only allows reading, and the webhooks scopes only cover endpoint management. Add events:write to the on-call tool's restricted key in Dashboard > Developers > API keys [E1]." }
+    }
+  }
+}

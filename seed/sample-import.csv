@@ -1,0 +1,6 @@
+ticket_id,customer_question,expert_resolution,product_area
+T-1071,"Can we filter which event types an endpoint receives?","Yes. Each endpoint subscribes to a list of event types, or * for all. Edit the endpoint in Dashboard > Webhooks and select only the types you need, or update it with POST /v2/endpoints/{id}.",webhooks
+T-1072,"Our endpoint uses a self-signed certificate on staging. Deliveries fail.","Relay only accepts certificates from public certificate authorities, so self-signed certificates fail with tls_error. Use a free certificate from a public CA such as Let's Encrypt on staging.",networking
+T-1073,"Where can I download past invoices?","All invoices are under Dashboard > Settings > Billing > Invoices. They are issued on the first day of each billing period.",billing
+T-1074,"Does the Python SDK retry 429 responses automatically?","Yes. relay-python retries network errors, 429 and 5xx responses up to max_retries times (default 3) with backoff, and honors Retry-After.",sdk-python
+T-1075,"Is payload data encrypted at rest?","Yes. Event payloads are encrypted at rest with AES-256, and Relay is SOC 2 Type II certified. Your account manager can share the report.",networking
